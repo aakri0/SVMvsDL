@@ -5,3 +5,4 @@ tensorflow
 seaborn
 jupyter
 scipy
+scikit-learn
