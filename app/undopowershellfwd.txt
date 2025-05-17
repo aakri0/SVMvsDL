@@ -1,0 +1,6 @@
+netsh interface portproxy add v4tov4 listenport=5000 listenaddress=0.0.0.0 connectport=5000 connectaddress=172.25.216.202
+
+netsh advfirewall firewall add rule name="WSL WebSocket Server" dir=in action=allow protocol=TCP localport=5000
+
+
+netsh interface portproxy delete v4tov4 listenport=5000 listenaddress=0.0.0.0
