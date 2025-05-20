@@ -63,8 +63,8 @@ async def predictor():
 
 async def main():
     print("🚀 Starting WebSocket prediction server...")
-    async with websockets.serve(handler, "0.0.0.0", 5000):
-        print("🌐 WebSocket server running on ws://0.0.0.0:5000/")
+    async with websockets.serve(handler, "0.0.0.0", 5002):
+        print("🌐 WebSocket server running on ws://0.0.0.0:5002/")
         await asyncio.gather(predictor())
 
 if __name__ == "__main__":
