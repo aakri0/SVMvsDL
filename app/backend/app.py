@@ -12,7 +12,7 @@ CORS(app)
 
 # 🔐 Initialize Firebase (only once)
 if not firebase_admin._apps:
-    cred = credentials.Certificate("credentials/har-wearable-firebase-adminsdk-fbsvc-3f8fe85a6c.json")
+    cred = credentials.Certificate("credentials/*.json")
     firebase_admin.initialize_app(cred)
     print("Firebase initialized.")
 
