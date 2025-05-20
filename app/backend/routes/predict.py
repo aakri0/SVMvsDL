@@ -3,33 +3,25 @@ from model.model import ActivityModel
 from datetime import datetime
 
 predict_route = Blueprint('predict_route', __name__)
-
-# Load the LSTM model
-model = ActivityModel("model/LSTM_model_50.h5")
+model = ActivityModel("model/LSTM_model_50.h5")  # ✅ Load once
 
 @predict_route.route('/predict', methods=['POST'])
 def predict():
-    # Import Firestore client here to avoid circular import
-    from app import db
-
-    data = request.get_json()
-
-    if 'window' not in data:
-        return jsonify({'error': 'Missing "window" in request'}), 400
-
     try:
-        result = model.predict(data['window'])
-        user_id = data.get('user_id', 'user_1')
+        from app import db  # ⛓️ Avoid circular import
+        data = request.get_json()
 
-        if data['window']:
-            last_sample = data['window'][-1]
-            x, y, z = last_sample
-        else:
-            x = y = z = 0.0
+        if not data or 'window' not in data:
+            return jsonify({'error': 'Missing "window" in request'}), 400
+
+        result = model.predict(data['window'])  # 🧠 Run inference
+
+        user_id = data.get('user_id', 'user_1')
+        last_sample = data['window'][-1] if data['window'] else [0.0, 0.0, 0.0]
+        x, y, z = last_sample
 
         try:
-            doc_ref = db.collection('predictions').document()
-            doc_ref.set({
+            db.collection('predictions').document().set({
                 'user_id': user_id,
                 'activity': result,
                 'timestamp': datetime.utcnow().isoformat(),
@@ -41,4 +33,5 @@ def predict():
         return jsonify({'activity': result})
 
     except Exception as e:
+        print(f"[ERROR] Prediction failed: {e}")
         return jsonify({'error': str(e)}), 500
