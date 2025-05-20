@@ -1,49 +1,42 @@
+import asyncio
+import websockets
 import sys
 import os
+import json
 import time
 
 # Fix import path to ensure ActivityModel can be found
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
-from model.model import ActivityModel
-
-# Load the trained LSTM model
-model = ActivityModel("model/LSTM_model_50.h5")
-
 WINDOW_SIZE = 50
-file_path = "simulator/WISDM_raw.txt"  # Adjust path as per your folder structure
+file_path = "simulator/WISDM_raw.txt"  # Adjust if needed
+SENSOR_DELAY = 0.02  # ~20ms delay to simulate 50Hz sensor
 
 def parse_line(line):
     try:
         parts = line.strip().strip(';').split(',')
-        return [float(parts[-3]), float(parts[-2]), float(parts[-1])]  # X, Y, Z
+        return {"x": float(parts[-3]), "y": float(parts[-2]), "z": float(parts[-1])}
     except Exception as e:
         print(f"[WARN] Skipping line due to parse error: {e}")
         return None
 
-def main():
-    window = []
-    i = 1
+async def simulate():
     try:
-        with open(file_path, "r") as file:
-            for line in file:
-                vec = parse_line(line)
-                if vec is None:
-                    continue
+        async with websockets.connect("ws://localhost:5002") as websocket:
+            print("✅ Simulator connected to WebSocket server")
 
-                window.append(vec)
+            with open(file_path, "r") as file:
+                for line in file:
+                    data = parse_line(line)
+                    if data:
+                        await websocket.send(json.dumps(data))
+                        print(f"📤 Sent: {data}")
+                        await asyncio.sleep(SENSOR_DELAY)
 
-                if len(window) == WINDOW_SIZE:
-                    start = time.time()
-                    results = model.predict(window)
-                    duration = time.time() - start
-                    print(f"🧠 Prediction {i:03d}: {results} | ⏱️ Time: {duration:.4f} sec")
-                    i += 1
-                    window.pop(0)  # Sliding window
-    except FileNotFoundError:
-        print(f"[ERROR] File not found: {file_path}")
+            print("✅ Finished sending all sensor data.")
+
     except Exception as e:
-        print(f"[ERROR] Unexpected error: {e}")
+        print(f"[ERROR] Failed to connect or send data: {e}")
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(simulate())
