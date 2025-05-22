@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wifi, WifiOff } from 'lucide-react';
@@ -10,9 +9,9 @@ type StatusCardProps = {
 
 const StatusCard = ({ isConnected, batteryLevel = 100 }: StatusCardProps) => {
   return (
-    <Card className="shadow-sm transition-all duration-200 hover:shadow-md">
+    <Card className="shadow-md rounded-xl">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium text-tech-text">Connection Status</CardTitle>
+        <CardTitle className="text-lg font-semibold text-gray-800">Connection Status</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between">
@@ -30,14 +29,14 @@ const StatusCard = ({ isConnected, batteryLevel = 100 }: StatusCardProps) => {
             )}
           </div>
           <div className="flex items-center space-x-2">
-            <div className="text-sm text-tech-muted">Battery:</div>
-            <div className="w-16 bg-gray-200 rounded-full h-2">
+            <span className="text-sm text-gray-600">Battery:</span>
+            <div className="w-20 h-2 bg-gray-300 rounded-full overflow-hidden">
               <div 
-                className={`h-2 rounded-full ${batteryLevel > 20 ? 'bg-green-500' : 'bg-red-500'}`}
+                className={`h-2 ${batteryLevel > 20 ? 'bg-green-500' : 'bg-red-500'}`} 
                 style={{ width: `${batteryLevel}%` }}
               ></div>
             </div>
-            <div className="text-sm font-medium">{batteryLevel}%</div>
+            <span className="text-sm font-medium">{batteryLevel.toFixed(1)}%</span>
           </div>
         </div>
       </CardContent>
