@@ -14,7 +14,7 @@ MAX_TIME_SAMPLES = 100
 async def send_prediction(window):
     try:
         response = requests.post(
-            "http://127.0.0.1:5001/api/predict",  # ✅ Updated port to match Flask
+            "http://127.0.0.1:5001/api/predict",  # Make sure port matches Flask server
             json={"window": window}
         )
         if response.status_code == 200:
