@@ -12,6 +12,9 @@ const int zPin = 32;
 
 WebSocketsClient webSocket;
 
+unsigned long previousMillis = 0;
+const long interval = 20;  // 20 milliseconds = 50Hz
+
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
   switch(type) {
     case WStype_CONNECTED:
@@ -36,22 +39,27 @@ void setup() {
     Serial.print(".");
   }
   Serial.println("\n✅ WiFi connected");
-  Serial.println("📡 ESP32 IP Address: " + WiFi.localIP().toString());  // ← Added this line
+  Serial.println("📡 ESP32 IP Address: " + WiFi.localIP().toString());
 
   webSocket.begin(host, port, "/"); // Make sure path is "/"
   webSocket.onEvent(webSocketEvent);
   webSocket.setReconnectInterval(5000);
 }
+
 void loop() {
-  webSocket.loop();
+  webSocket.loop();  // keep WebSocket alive and responsive
 
-  int xVal = analogRead(xPin);
-  int yVal = analogRead(yPin);
-  int zVal = analogRead(zPin);
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
 
-  String data = "{\"x\":" + String(xVal) + ",\"y\":" + String(yVal) + ",\"z\":" + String(zVal) + "}";
-  Serial.println("📤 Sending: " + data);
-  webSocket.sendTXT(data);
+    int xVal = analogRead(xPin);
+    int yVal = analogRead(yPin);
+    int zVal = analogRead(zPin);
 
-  delay(500);  // Send every 500ms
+    String data = "{\"x\":" + String(xVal) + ",\"y\":" + String(yVal) + ",\"z\":" + String(zVal) + ",\"source\":\"live\"}";
+
+    Serial.println("📤 Sending: " + data);
+    webSocket.sendTXT(data);
+  }
 }
