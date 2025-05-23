@@ -1,4 +1,5 @@
 import React from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 type Activity =
   | "walking"
@@ -11,8 +12,8 @@ type Activity =
   | null;
 
 interface ActivityPredictionProps {
-  activity: string | null | undefined;  // renamed from currentActivity to activity
-  accuracy: number;                     // in percentage
+  activity: string | null | undefined;
+  accuracy: number;
   actualActivity?: string | null | undefined;
   isSimulated?: boolean;
 }
@@ -58,44 +59,53 @@ const ActivityPrediction: React.FC<ActivityPredictionProps> = ({
   const normalizedActual = normalizeActivity(actualActivity);
 
   return (
-    <div className="p-4 bg-white rounded shadow-md">
-      <h2 className="text-xl font-semibold mb-2">Activity Prediction</h2>
-
-      {isSimulated ? (
-        <>
-          <div className="text-base mb-1">
-            <span role="img" aria-label="Actual Activity" className="mr-2">
-              🎯
-            </span>
-            <strong>Actual Activity:</strong>{" "}
-            <span className="font-medium text-tech-text">
-              {formatActivityLabel(normalizedActual)}
-            </span>
-          </div>
+    <Card className="bg-[hsl(var(--card))] text-[hsl(var(--card-foreground))] border shadow-md rounded-xl">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg font-semibold text-[hsl(var(--card-foreground))]">
+          Activity Prediction
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {isSimulated ? (
+          <>
+            <div className="text-base mb-2">
+              <span role="img" aria-label="Actual Activity" className="mr-2">
+                🎯
+              </span>
+              <strong>Actual Activity:</strong>{" "}
+              <span className="font-medium text-[hsl(var(--card-foreground))]">
+                {formatActivityLabel(normalizedActual)}
+              </span>
+            </div>
+            <div className="text-base">
+              <span role="img" aria-label="Predicted Activity" className="mr-2">
+                🔮
+              </span>
+              <strong>Predicted Activity:</strong>{" "}
+              <span className="font-medium text-[hsl(var(--card-foreground))]">
+                {formatActivityLabel(normalizedActivity)}
+              </span>{" "}
+              <span className="text-sm text-[hsl(var(--muted-foreground))]">
+                ({accuracy.toFixed(1)}%)
+              </span>
+            </div>
+          </>
+        ) : (
           <div className="text-base">
             <span role="img" aria-label="Predicted Activity" className="mr-2">
               🔮
             </span>
             <strong>Predicted Activity:</strong>{" "}
-            <span className="font-medium text-tech-text">
+            <span className="font-medium text-[hsl(var(--card-foreground))]">
               {formatActivityLabel(normalizedActivity)}
             </span>{" "}
-            <span className="text-sm text-gray-500">({accuracy.toFixed(1)}%)</span>
+            <span className="text-sm text-[hsl(var(--muted-foreground))]">
+              ({accuracy.toFixed(1)}%)
+            </span>
           </div>
-        </>
-      ) : (
-        <div className="text-base">
-          <span role="img" aria-label="Predicted Activity" className="mr-2">
-            🔮
-          </span>
-          <strong>Predicted Activity:</strong>{" "}
-          <span className="font-medium text-tech-text">
-            {formatActivityLabel(normalizedActivity)}
-          </span>{" "}
-          <span className="text-sm text-gray-500">({accuracy.toFixed(1)}%)</span>
-        </div>
-      )}
-    </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
