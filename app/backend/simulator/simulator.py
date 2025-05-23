@@ -28,7 +28,7 @@ def parse_line(line):
 async def simulate():
     try:
         async with websockets.connect("ws://localhost:5002") as websocket:
-            print("✅ Simulator connected to WebSocket server")
+            print("✅ Simulated connected to WebSocket server")
 
             with open(file_path, "r") as file:
                 for line in file:

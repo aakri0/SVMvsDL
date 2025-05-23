@@ -12,7 +12,7 @@ CORS(app)
 # 🔐 Initialize Firebase (only once)
 if not firebase_admin._apps:
     # Replace wildcard with actual file name or use environment variable
-    firebase_credentials_path = "credentials/serviceAccountKey.json"  # ✅ Use actual filename
+    firebase_credentials_path = "/Users/aakrisht/Developer/EL/SVMvsDL/app/backend/credentials/*.json"  # ✅ Use actual filename
     if not os.path.exists(firebase_credentials_path):
         raise FileNotFoundError(f"Firebase credentials file not found at {firebase_credentials_path}")
     
