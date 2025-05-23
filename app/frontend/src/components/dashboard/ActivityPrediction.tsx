@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 type Activity =
   | "walking"
   | "running"
+  | "jogging"
   | "sitting"
   | "standing"
   | "lying"
@@ -25,6 +26,7 @@ function normalizeActivity(input: string | null | undefined): Activity {
     [
       "walking",
       "running",
+      "jogging",
       "sitting",
       "standing",
       "lying",
