@@ -9,14 +9,22 @@ from collections import deque
 WINDOW_SIZE = 50
 PREDICTION_INTERVAL = 0.2  # Adjust prediction frequency (5 times per second)
 BUFFER = deque(maxlen=200)
+
 SENSOR_SOURCE = "unknown"
+USER_ID = "user_1"
+ACTUAL_ACTIVITY = "unknown"
 
 TIME_DELTAS = []
 MAX_TIME_SAMPLES = 100
 
-async def send_prediction(window, source):
+async def send_prediction(window, source, user_id=None, actual_activity=None):
     url = "http://127.0.0.1:5001/api/predict"
-    payload = {"window": window, "source": source}
+    payload = {
+        "window": window,
+        "source": source,
+        "user_id": user_id,
+        "actual_activity": actual_activity
+    }
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(url, json=payload) as resp:
@@ -30,7 +38,7 @@ async def send_prediction(window, source):
         print(f"[ERROR] Failed to send prediction: {e}")
 
 async def handler(websocket):
-    global SENSOR_SOURCE, TIME_DELTAS
+    global SENSOR_SOURCE, USER_ID, ACTUAL_ACTIVITY, TIME_DELTAS
     last_timestamp = None
     print("✅ Client connected")
     try:
@@ -50,6 +58,8 @@ async def handler(websocket):
                 x, y, z = data['x'], data['y'], data['z']
                 BUFFER.append([x, y, z])
                 SENSOR_SOURCE = data.get("source", "unknown")
+                USER_ID = data.get("user_id", "user_1")
+                ACTUAL_ACTIVITY = data.get("actual_activity", "unknown")
             except Exception as e:
                 print(f"[WARN] Invalid message: {e}")
     except websockets.exceptions.ConnectionClosed as e:
@@ -62,7 +72,7 @@ async def predictor():
             if len(BUFFER) >= WINDOW_SIZE:
                 window = list(BUFFER)[-WINDOW_SIZE:]
                 print("🧠 Sending prediction window...")
-                await send_prediction(window, SENSOR_SOURCE)
+                await send_prediction(window, SENSOR_SOURCE, USER_ID, ACTUAL_ACTIVITY)
         except Exception as e:
             print(f"[ERROR] Predictor exception: {e}")
 
