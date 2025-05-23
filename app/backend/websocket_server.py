@@ -1,34 +1,38 @@
 import asyncio
 import websockets
 import json
-import requests
+import aiohttp
 from datetime import datetime
 from statistics import mean
+from collections import deque
 
 WINDOW_SIZE = 50
-PREDICTION_INTERVAL = 1
-BUFFER = []
+PREDICTION_INTERVAL = 0.2  # Adjust prediction frequency (5 times per second)
+BUFFER = deque(maxlen=200)
+SENSOR_SOURCE = "unknown"
+
 TIME_DELTAS = []
 MAX_TIME_SAMPLES = 100
 
-async def send_prediction(window):
+async def send_prediction(window, source):
+    url = "http://127.0.0.1:5001/api/predict"
+    payload = {"window": window, "source": source}
     try:
-        response = requests.post(
-            "http://127.0.0.1:5001/api/predict",  # Make sure port matches Flask server
-            json={"window": window}
-        )
-        if response.status_code == 200:
-            prediction = response.json()
-            print("📊 Prediction:", prediction.get("activity", "N/A"))
-        else:
-            print(f"[ERROR] Server responded with {response.status_code}: {response.text}")
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=payload) as resp:
+                if resp.status == 200:
+                    prediction = await resp.json()
+                    print(f"📊 Prediction ({source}):", prediction.get("activity", "N/A"))
+                else:
+                    text = await resp.text()
+                    print(f"[ERROR] Server responded with {resp.status}: {text}")
     except Exception as e:
         print(f"[ERROR] Failed to send prediction: {e}")
 
 async def handler(websocket):
-    global TIME_DELTAS
+    global SENSOR_SOURCE, TIME_DELTAS
     last_timestamp = None
-    print("✅ ESP32 simulator connected")
+    print("✅ Client connected")
     try:
         async for message in websocket:
             current_time = datetime.now()
@@ -45,8 +49,7 @@ async def handler(websocket):
                 data = json.loads(message)
                 x, y, z = data['x'], data['y'], data['z']
                 BUFFER.append([x, y, z])
-                if len(BUFFER) > 200:
-                    BUFFER.pop(0)
+                SENSOR_SOURCE = data.get("source", "unknown")
             except Exception as e:
                 print(f"[WARN] Invalid message: {e}")
     except websockets.exceptions.ConnectionClosed as e:
@@ -54,11 +57,14 @@ async def handler(websocket):
 
 async def predictor():
     while True:
-        await asyncio.sleep(PREDICTION_INTERVAL)
-        if len(BUFFER) >= WINDOW_SIZE:
-            window = BUFFER[-WINDOW_SIZE:]
-            print("🧠 Sending prediction window...")
-            await send_prediction(window)
+        try:
+            await asyncio.sleep(PREDICTION_INTERVAL)
+            if len(BUFFER) >= WINDOW_SIZE:
+                window = list(BUFFER)[-WINDOW_SIZE:]
+                print("🧠 Sending prediction window...")
+                await send_prediction(window, SENSOR_SOURCE)
+        except Exception as e:
+            print(f"[ERROR] Predictor exception: {e}")
 
 async def main():
     print("🚀 Starting WebSocket prediction server...")

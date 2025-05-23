@@ -15,19 +15,22 @@ def predict():
         if not data or 'window' not in data:
             return jsonify({'error': 'Missing "window" in request'}), 400
 
-        # Run inference
-        result = model.predict(data['window'])
+        # Run inference and get accuracy
+        activity, confidence = model.predict_with_accuracy(data['window'])
 
         user_id = data.get('user_id', 'user_1')
+        data_source = data.get('source', 'simulator')  # Optional: source flag
         last_sample = data['window'][-1] if data['window'] else [0.0, 0.0, 0.0]
         x, y, z = last_sample
 
         # Create document
         prediction_doc = {
             'user_id': user_id,
-            'activity': result,
-            'timestamp': firestore.SERVER_TIMESTAMP,  # ✅ Always use server timestamp
-            'client_time': datetime.utcnow().isoformat(),  # ⏱ Optional: debug-only fallback
+            'activity': activity,
+            'confidence': confidence,  # ✅ Add model confidence
+            'source': data_source,     # ✅ Optional: save source
+            'timestamp': firestore.SERVER_TIMESTAMP,
+            'client_time': datetime.utcnow().isoformat(),  # Optional for debugging
             'sensor_data': {
                 'x': float(x),
                 'y': float(y),
@@ -40,7 +43,7 @@ def predict():
         except Exception as e:
             print(f"[ERROR] Firestore write failed: {e}")
 
-        return jsonify({'activity': result})
+        return jsonify({'activity': activity, 'confidence': confidence})
 
     except Exception as e:
         print(f"[ERROR] Prediction failed: {e}")

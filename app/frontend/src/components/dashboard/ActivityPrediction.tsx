@@ -1,12 +1,13 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartBar } from 'lucide-react';
 
 type Activity = 'walking' | 'running' | 'sitting' | 'standing' | 'lying';
+
 type ActivityPredictionProps = {
   currentActivity: Activity | null;
   confidence: number;
+  // accuracy removed
 };
 
 const ActivityPrediction = ({ currentActivity, confidence }: ActivityPredictionProps) => {
@@ -27,8 +28,8 @@ const ActivityPrediction = ({ currentActivity, confidence }: ActivityPredictionP
         <CardTitle className="text-lg font-medium text-tech-text">Activity Recognition</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col">
-          <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col space-y-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="text-4xl">{getActivityEmoji(currentActivity)}</div>
               <div className="font-semibold text-xl capitalize">
@@ -40,12 +41,15 @@ const ActivityPrediction = ({ currentActivity, confidence }: ActivityPredictionP
               <span className="text-tech-primary font-medium">{confidence.toFixed(1)}% confidence</span>
             </div>
           </div>
+
           <div className="w-full bg-gray-200 rounded-full h-2.5">
-            <div 
+            <div
               className="bg-tech-primary h-2.5 rounded-full transition-all duration-300 ease-in-out"
               style={{ width: `${confidence}%` }}
             ></div>
           </div>
+
+          {/* Removed accuracy display */}
         </div>
       </CardContent>
     </Card>

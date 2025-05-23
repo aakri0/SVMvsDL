@@ -29,8 +29,10 @@ async def simulate():
                 for line in file:
                     data = parse_line(line)
                     if data:
-                        await websocket.send(json.dumps(data))
-                        print(f"📤 Sent: {data}")
+                        # Include source field to mark data as simulated
+                        message = {**data, "source": "simulated"}
+                        await websocket.send(json.dumps(message))
+                        print(f"📤 Sent: {message}")
                         await asyncio.sleep(SENSOR_DELAY)
 
             print("✅ Finished sending all sensor data.")
