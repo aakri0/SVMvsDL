@@ -31,6 +31,8 @@ import NotFound from "./pages/NotFound";
 
 import { Switch } from "./components/ui/switch"; // Import your Radix switch
 
+import isEqual from "lodash.isequal"; // deep equality check for debounce
+
 const queryClient = new QueryClient();
 
 type Activity =
@@ -79,6 +81,9 @@ const App = () => {
       limit(10)
     );
 
+    let debounceTimer: NodeJS.Timeout | null = null;
+    let latestPreds: Prediction[] = [];
+
     const unsubscribe = onSnapshot(
       q,
       (querySnapshot) => {
@@ -89,10 +94,13 @@ const App = () => {
 
           let parsedTime: Date;
           if (data.timestamp?.toDate) parsedTime = data.timestamp.toDate();
-          else if (typeof data.timestamp === "string") parsedTime = new Date(data.timestamp);
+          else if (typeof data.timestamp === "string")
+            parsedTime = new Date(data.timestamp);
           else parsedTime = new Date();
 
-          const rawActivity = data.activity ? String(data.activity).toLowerCase() : "unknown";
+          const rawActivity = data.activity
+            ? String(data.activity).toLowerCase()
+            : "unknown";
           const rawActualActivity = data.actual_activity
             ? String(data.actual_activity).toLowerCase()
             : undefined;
@@ -111,14 +119,29 @@ const App = () => {
             time: parsedTime,
           });
         });
-        setPredictions(preds);
+
+        latestPreds = preds;
+
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          setPredictions((oldPreds) => {
+            if (isEqual(oldPreds, latestPreds)) {
+              return oldPreds; // no update if data same
+            }
+            return latestPreds;
+          });
+          debounceTimer = null;
+        }, 400); // debounce delay (400ms)
       },
       (error) => {
         console.error("Firestore onSnapshot error:", error);
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (debounceTimer) clearTimeout(debounceTimer);
+    };
   }, [isSimulated, isStreaming]);
 
   const latestPrediction = predictions[0];
@@ -146,7 +169,9 @@ const App = () => {
                       <label className="inline-flex items-center space-x-3 cursor-pointer">
                         <Switch
                           checked={isSimulated}
-                          onCheckedChange={(checked) => setIsSimulated(checked as boolean)}
+                          onCheckedChange={(checked) =>
+                            setIsSimulated(checked as boolean)
+                          }
                           aria-label="Toggle between live and simulated data"
                         />
                         <span className="text-sm font-medium">
