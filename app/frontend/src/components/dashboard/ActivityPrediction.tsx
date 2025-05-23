@@ -1,58 +1,101 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartBar } from 'lucide-react';
+import React from "react";
 
-type Activity = 'walking' | 'running' | 'sitting' | 'standing' | 'lying';
+type Activity =
+  | "walking"
+  | "running"
+  | "sitting"
+  | "standing"
+  | "lying"
+  | "upstairs"
+  | "downstairs"
+  | null;
 
-type ActivityPredictionProps = {
-  currentActivity: Activity | null;
-  confidence: number;
-  // accuracy removed
-};
+interface ActivityPredictionProps {
+  activity: string | null | undefined;  // renamed from currentActivity to activity
+  accuracy: number;                     // in percentage
+  actualActivity?: string | null | undefined;
+  isSimulated?: boolean;
+}
 
-const ActivityPrediction = ({ currentActivity, confidence }: ActivityPredictionProps) => {
-  const getActivityEmoji = (activity: Activity | null): string => {
-    switch (activity) {
-      case 'walking': return '🚶';
-      case 'running': return '🏃';
-      case 'sitting': return '💺';
-      case 'standing': return '🧍';
-      case 'lying': return '🛌';
-      default: return '❓';
-    }
-  };
+function normalizeActivity(input: string | null | undefined): Activity {
+  if (!input) return null;
+  const lower = input.toLowerCase();
+  if (
+    [
+      "walking",
+      "running",
+      "sitting",
+      "standing",
+      "lying",
+      "upstairs",
+      "downstairs",
+    ].includes(lower)
+  ) {
+    return lower as Activity;
+  }
+  return null;
+}
+
+function formatActivityLabel(activity: Activity): string {
+  if (!activity) return "N/A";
+  switch (activity) {
+    case "upstairs":
+      return "Upstairs";
+    case "downstairs":
+      return "Downstairs";
+    default:
+      return activity.charAt(0).toUpperCase() + activity.slice(1);
+  }
+}
+
+const ActivityPrediction: React.FC<ActivityPredictionProps> = ({
+  activity,
+  accuracy,
+  actualActivity,
+  isSimulated = false,
+}) => {
+  const normalizedActivity = normalizeActivity(activity);
+  const normalizedActual = normalizeActivity(actualActivity);
 
   return (
-    <Card className="shadow-sm transition-all duration-200 hover:shadow-md">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium text-tech-text">Activity Recognition</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="text-4xl">{getActivityEmoji(currentActivity)}</div>
-              <div className="font-semibold text-xl capitalize">
-                {currentActivity || 'Unknown'}
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <ChartBar className="h-5 w-5 text-tech-primary" />
-              <span className="text-tech-primary font-medium">{confidence.toFixed(1)}% confidence</span>
-            </div>
-          </div>
+    <div className="p-4 bg-white rounded shadow-md">
+      <h2 className="text-xl font-semibold mb-2">Activity Prediction</h2>
 
-          <div className="w-full bg-gray-200 rounded-full h-2.5">
-            <div
-              className="bg-tech-primary h-2.5 rounded-full transition-all duration-300 ease-in-out"
-              style={{ width: `${confidence}%` }}
-            ></div>
+      {isSimulated ? (
+        <>
+          <div className="text-base mb-1">
+            <span role="img" aria-label="Actual Activity" className="mr-2">
+              🎯
+            </span>
+            <strong>Actual Activity:</strong>{" "}
+            <span className="font-medium text-tech-text">
+              {formatActivityLabel(normalizedActual)}
+            </span>
           </div>
-
-          {/* Removed accuracy display */}
+          <div className="text-base">
+            <span role="img" aria-label="Predicted Activity" className="mr-2">
+              🔮
+            </span>
+            <strong>Predicted Activity:</strong>{" "}
+            <span className="font-medium text-tech-text">
+              {formatActivityLabel(normalizedActivity)}
+            </span>{" "}
+            <span className="text-sm text-gray-500">({accuracy.toFixed(1)}%)</span>
+          </div>
+        </>
+      ) : (
+        <div className="text-base">
+          <span role="img" aria-label="Predicted Activity" className="mr-2">
+            🔮
+          </span>
+          <strong>Predicted Activity:</strong>{" "}
+          <span className="font-medium text-tech-text">
+            {formatActivityLabel(normalizedActivity)}
+          </span>{" "}
+          <span className="text-sm text-gray-500">({accuracy.toFixed(1)}%)</span>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 };
 

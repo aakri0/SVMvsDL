@@ -6,12 +6,14 @@ type StatusCardProps = {
   isConnected: boolean;
   batteryLevel?: number;
   isSimulated?: boolean;  // new prop to detect simulator mode
+  userId?: string;        // new optional prop for user ID display
 };
 
 const StatusCard = ({
   isConnected,
   batteryLevel = 100,
   isSimulated = false,
+  userId,
 }: StatusCardProps) => {
   return (
     <Card className="shadow-md rounded-xl">
@@ -21,7 +23,7 @@ const StatusCard = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col space-y-3">
           <div className="flex items-center space-x-3">
             {isSimulated ? (
               <>
@@ -40,6 +42,12 @@ const StatusCard = ({
               </>
             )}
           </div>
+
+          {userId && (
+            <div className="text-sm text-gray-700">
+              <strong>User ID:</strong> {userId}
+            </div>
+          )}
 
           {/* Hide battery status if simulated or batteryLevel missing */}
           {!isSimulated && batteryLevel != null && (

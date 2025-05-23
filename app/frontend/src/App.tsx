@@ -19,11 +19,41 @@ import AccelerometerGraph from "@/components/dashboard/AccelerometerGraph";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
+// React Query client instance
 const queryClient = new QueryClient();
 
+type Activity = 
+  | "walking" 
+  | "running" 
+  | "sitting" 
+  | "standing" 
+  | "lying" 
+  | "downstairs" 
+  | "upstairs";
+
+// Import the Prediction type from PredictionList
+import type { Prediction } from "@/components/PredictionList";
+
+// Helper to safely convert string to Activity or null
+const toActivity = (str?: string): Activity | null => {
+  const activities = [
+    "walking", 
+    "running", 
+    "sitting", 
+    "standing", 
+    "lying", 
+    "downstairs", 
+    "upstairs"
+  ] as const;
+  if (str && activities.includes(str as Activity)) {
+    return str as Activity;
+  }
+  return null;
+};
+
 const App = () => {
-  const [predictions, setPredictions] = useState([]);
-  const [isSimulated, setIsSimulated] = useState(false); // false = live, true = simulator
+  const [predictions, setPredictions] = useState<Prediction[]>([]);
+  const [isSimulated, setIsSimulated] = useState(false);
 
   useEffect(() => {
     const sourceFilter = isSimulated ? "simulated" : "live";
@@ -35,47 +65,61 @@ const App = () => {
       limit(10)
     );
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const preds = [];
-      console.log(`⏳ Firestore snapshot received for source="${sourceFilter}"`);
-      
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        console.log("Document data:", data);  // Log each doc's data
-        
-        const sensor = data.sensor_data || {};
+    const unsubscribe = onSnapshot(
+      q,
+      (querySnapshot) => {
+        const preds: Prediction[] = [];
+        console.log(`⏳ Firestore snapshot received for source="${sourceFilter}"`);
 
-        let parsedTime: Date;
-        if (data.timestamp?.toDate) {
-          parsedTime = data.timestamp.toDate();
-        } else if (typeof data.timestamp === "string") {
-          parsedTime = new Date(data.timestamp);
-        } else {
-          parsedTime = new Date();
-        }
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
 
-        preds.push({
-          id: doc.id,
-          ...data,
-          accelX: sensor.x ?? 0,
-          accelY: sensor.y ?? 0,
-          accelZ: sensor.z ?? 0,
-          time: parsedTime,
+          console.log("Document data:", data);
+
+          const sensor = data.sensor_data || {};
+
+          // Ensure timestamp is parsed to Date
+          let parsedTime: Date;
+          if (data.timestamp?.toDate) {
+            parsedTime = data.timestamp.toDate();
+          } else if (typeof data.timestamp === "string") {
+            parsedTime = new Date(data.timestamp);
+          } else {
+            parsedTime = new Date();
+          }
+
+          // Normalize activities to lowercase strings if present
+          const rawActivity = data.activity ? String(data.activity).toLowerCase() : "unknown";
+          const rawActualActivity = data.actual_activity ? String(data.actual_activity).toLowerCase() : undefined;
+
+          preds.push({
+            id: doc.id,
+            user_id: data.user_id ?? "",
+            activity: rawActivity,
+            accuracy: data.accuracy ?? 0,
+            actual_activity: rawActualActivity,
+            timestamp: data.timestamp, // keep original Firestore Timestamp for PredictionList
+            accelX: sensor.x ?? 0,
+            accelY: sensor.y ?? 0,
+            accelZ: sensor.z ?? 0,
+            battery: data.battery,
+            time: parsedTime, // for AccelerometerGraph usage
+          });
         });
-      });
 
-      console.log(`📥 Processed predictions array (${sourceFilter}):`, preds);
-      setPredictions(preds);
-    }, (error) => {
-      console.error("Firestore onSnapshot error:", error);
-    });
+        console.log(`📥 Processed predictions array (${sourceFilter}):`, preds);
+        setPredictions(preds);
+      },
+      (error) => {
+        console.error("Firestore onSnapshot error:", error);
+      }
+    );
 
     return () => unsubscribe();
   }, [isSimulated]);
 
   const latestPrediction = predictions[0];
 
-  // Reset handler: clear all prediction data
   const resetData = () => {
     setPredictions([]);
   };
@@ -93,7 +137,7 @@ const App = () => {
                 <div className="min-h-screen bg-background text-foreground p-4 space-y-4">
                   <Header />
 
-                  {/* Toggle Switch for Live / Simulator */}
+                  {/* Toggle Live / Simulator Mode */}
                   <div className="mb-4">
                     <label className="inline-flex items-center cursor-pointer">
                       <input
@@ -116,6 +160,7 @@ const App = () => {
                       isConnected={!isSimulated}
                       isSimulated={isSimulated}
                       batteryLevel={latestPrediction?.battery ?? 100}
+                      userId={latestPrediction?.user_id ?? ""}
                     />
                     <SensorData
                       x={latestPrediction?.accelX ?? 0}
@@ -137,21 +182,24 @@ const App = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <ActivityPrediction
-                      currentActivity={latestPrediction?.activity ?? "Unknown"}
-                      confidence={(latestPrediction?.confidence ?? 0) * 100}
+                      activity={toActivity(latestPrediction?.activity) ?? null}
+                      accuracy={(latestPrediction?.accuracy ?? 0) * 100}
+                      actualActivity={isSimulated ? toActivity(latestPrediction?.actual_activity) ?? null : undefined}
+                      isSimulated={isSimulated}
                     />
+
                     <AccelerometerGraph
                       data={predictions.map((p) => ({
                         x: p.accelX,
                         y: p.accelY,
                         z: p.accelZ,
-                        time: p.time,
+                        time: p.time.toISOString(), // Use parsed Date for graph
                       }))}
                     />
                   </div>
 
                   <div className="mt-4">
-                    <PredictionList predictions={predictions} />
+                    <PredictionList predictions={predictions} isSimulated={isSimulated} />
                   </div>
                 </div>
               }
