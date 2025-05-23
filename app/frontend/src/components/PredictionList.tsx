@@ -23,6 +23,7 @@ interface PredictionListProps {
 type Activity =
   | "walking"
   | "running"
+  | "jogging"
   | "sitting"
   | "standing"
   | "lying"
@@ -38,6 +39,7 @@ function normalizeActivity(input?: string | null): Activity {
     [
       "walking",
       "running",
+      "jogging",
       "sitting",
       "standing",
       "lying",
@@ -63,7 +65,10 @@ function formatActivityLabel(activity: Activity): string {
   }
 }
 
-const PredictionList: React.FC<PredictionListProps> = ({ predictions, isSimulated }) => {
+const PredictionList: React.FC<PredictionListProps> = ({
+  predictions,
+  isSimulated,
+}) => {
   return (
     <div className="p-4">
       <h2 className="text-xl font-semibold mb-4">Recent Predictions</h2>
@@ -80,17 +85,22 @@ const PredictionList: React.FC<PredictionListProps> = ({ predictions, isSimulate
                 <strong>User:</strong> {p.user_id}
               </p>
               <p>
-                <strong>Predicted Activity:</strong> {formatActivityLabel(normalizedActivity)}
+                <strong>Predicted Activity:</strong>{" "}
+                {formatActivityLabel(normalizedActivity)}
               </p>
               {isSimulated && normalizedActualActivity && (
                 <p>
-                  <strong>Actual Activity:</strong> {formatActivityLabel(normalizedActualActivity)}
+                  <strong>Actual Activity:</strong>{" "}
+                  {formatActivityLabel(normalizedActualActivity)}
                 </p>
               )}
               <p>
-                <strong>Accuracy:</strong> {(p.accuracy * 100).toFixed(1)}%
+                <strong>Accuracy:</strong>{" "}
+                {(p.accuracy * 100).toFixed(1)}%
               </p>
-              <p className="text-sm italic text-muted-foreground">{p.time.toLocaleString()}</p>
+              <p className="text-sm italic text-muted-foreground">
+                {p.time.toLocaleString()}
+              </p>
             </li>
           );
         })}

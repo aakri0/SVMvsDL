@@ -6,7 +6,14 @@ import { Toaster as Sonner } from "./components/ui/sonner";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { collection, query, orderBy, limit, onSnapshot, where } from "firebase/firestore";
+import {
+  collection,
+  query,
+  orderBy,
+  limit,
+  onSnapshot,
+  where,
+} from "firebase/firestore";
 import { db } from "./firebase";
 
 import PredictionList from "./components/PredictionList";
@@ -15,37 +22,39 @@ import StatusCard from "./components/dashboard/StatusCard";
 import SensorData from "./components/dashboard/SensorData";
 import ActivityPrediction from "./components/dashboard/ActivityPrediction";
 import AccelerometerGraph from "./components/dashboard/AccelerometerGraph";
-
-import ControlPanel from "./components/dashboard/ControlPanel";  // Import ControlPanel
+import ControlPanel from "./components/dashboard/ControlPanel";
 
 import ThemeProvider from "./components/ThemeProvider";
 import ThemeToggle from "./components/ThemeToggle";
 
-import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+
+import { Switch } from "./components/ui/switch"; // Import your Radix switch
 
 const queryClient = new QueryClient();
 
-type Activity = 
-  | "walking" 
-  | "running" 
-  | "sitting" 
-  | "standing" 
-  | "lying" 
-  | "downstairs" 
+type Activity =
+  | "walking"
+  | "running"
+  | "jogging"
+  | "sitting"
+  | "standing"
+  | "lying"
+  | "downstairs"
   | "upstairs";
 
 import type { Prediction } from "./components/PredictionList";
 
 const toActivity = (str?: string): Activity | null => {
   const activities = [
-    "walking", 
-    "running", 
-    "sitting", 
-    "standing", 
-    "lying", 
-    "downstairs", 
-    "upstairs"
+    "walking",
+    "running",
+    "jogging",
+    "sitting",
+    "standing",
+    "lying",
+    "downstairs",
+    "upstairs",
   ] as const;
   if (str && activities.includes(str as Activity)) {
     return str as Activity;
@@ -59,6 +68,8 @@ const App = () => {
   const [isStreaming, setIsStreaming] = useState(false);
 
   useEffect(() => {
+    if (!isStreaming) return;
+
     const sourceFilter = isSimulated ? "simulated" : "live";
 
     const q = query(
@@ -82,7 +93,9 @@ const App = () => {
           else parsedTime = new Date();
 
           const rawActivity = data.activity ? String(data.activity).toLowerCase() : "unknown";
-          const rawActualActivity = data.actual_activity ? String(data.actual_activity).toLowerCase() : undefined;
+          const rawActualActivity = data.actual_activity
+            ? String(data.actual_activity).toLowerCase()
+            : undefined;
 
           preds.push({
             id: doc.id,
@@ -106,7 +119,7 @@ const App = () => {
     );
 
     return () => unsubscribe();
-  }, [isSimulated]);
+  }, [isSimulated, isStreaming]);
 
   const latestPrediction = predictions[0];
 
@@ -130,17 +143,13 @@ const App = () => {
 
                     {/* Simulator toggle and theme toggle */}
                     <div className="flex justify-between items-center mb-4 px-4">
-                      <label className="inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
+                      <label className="inline-flex items-center space-x-3 cursor-pointer">
+                        <Switch
                           checked={isSimulated}
-                          onChange={() => setIsSimulated(!isSimulated)}
+                          onCheckedChange={(checked) => setIsSimulated(checked as boolean)}
+                          aria-label="Toggle between live and simulated data"
                         />
-                        <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:bg-blue-600 relative">
-                          <span className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-5"></span>
-                        </div>
-                        <span className="ml-3 text-sm font-medium">
+                        <span className="text-sm font-medium">
                           {isSimulated ? "Simulator Mode" : "Live Sensor Mode"}
                         </span>
                       </label>
@@ -164,38 +173,43 @@ const App = () => {
                     </div>
 
                     {/* Graph on left, ActivityPrediction + ControlPanel stacked on right */}
-                    {/* Graph on left, ActivityPrediction + ControlPanel stacked on right */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="md:col-span-2">
-                      <AccelerometerGraph
-                        data={predictions.map((p) => ({
-                          x: p.accelX,
-                          y: p.accelY,
-                          z: p.accelZ,
-                          time: p.time.toISOString(),
-                        }))}
-                      />
-                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="md:col-span-2">
+                        <AccelerometerGraph
+                          data={predictions.map((p) => ({
+                            x: p.accelX,
+                            y: p.accelY,
+                            z: p.accelZ,
+                            time: p.time.toISOString(),
+                          }))}
+                        />
+                      </div>
 
-                    <div className="flex flex-col space-y-4 w-full">
-                      <ActivityPrediction
-                        activity={toActivity(latestPrediction?.activity) ?? null}
-                        accuracy={(latestPrediction?.accuracy ?? 0) * 100}
-                        actualActivity={isSimulated ? toActivity(latestPrediction?.actual_activity) ?? null : undefined}
-                        isSimulated={isSimulated}
-                      />
-                      <ControlPanel
-                        isStreaming={isStreaming}
-                        onToggleStreaming={toggleStreaming}
-                        onReset={resetData}
-                      />
+                      <div className="flex flex-col space-y-4 w-full">
+                        <ActivityPrediction
+                          activity={toActivity(latestPrediction?.activity) ?? null}
+                          accuracy={(latestPrediction?.accuracy ?? 0) * 100}
+                          actualActivity={
+                            isSimulated
+                              ? toActivity(latestPrediction?.actual_activity) ?? null
+                              : undefined
+                          }
+                          isSimulated={isSimulated}
+                        />
+                        <ControlPanel
+                          isStreaming={isStreaming}
+                          onToggleStreaming={toggleStreaming}
+                          onReset={resetData}
+                        />
+                      </div>
                     </div>
-                  </div>
-
 
                     {/* Prediction List */}
                     <div className="mt-4 px-4">
-                      <PredictionList predictions={predictions} isSimulated={isSimulated} />
+                      <PredictionList
+                        predictions={predictions}
+                        isSimulated={isSimulated}
+                      />
                     </div>
                   </div>
                 }
