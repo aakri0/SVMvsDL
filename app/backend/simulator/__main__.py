@@ -5,11 +5,15 @@ import os
 import json
 import time
 
+# Ensure parent directory is in the path for module resolution
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 WINDOW_SIZE = 50
-file_path = "simulator/WISDM_raw.txt"
 SENSOR_DELAY = 0.02
+
+# Get absolute path to the WISDM_raw.txt file relative to this script
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+file_path = os.path.join(CURRENT_DIR, "WISDM_raw.txt")
 
 def parse_line(line):
     try:

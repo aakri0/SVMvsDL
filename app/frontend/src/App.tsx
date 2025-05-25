@@ -29,9 +29,8 @@ import ThemeToggle from "./components/ThemeToggle";
 
 import NotFound from "./pages/NotFound";
 
-import { Switch } from "./components/ui/switch"; // Import your Radix switch
-
-import isEqual from "lodash.isequal"; // deep equality check for debounce
+import { Switch } from "./components/ui/switch";
+import isEqual from "lodash.isequal";
 
 const queryClient = new QueryClient();
 
@@ -68,6 +67,19 @@ const App = () => {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [isSimulated, setIsSimulated] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [modelType, setModelType] = useState<"lstm" | "svm">("lstm");
+
+  // Fetch initial model state from backend on mount
+  useEffect(() => {
+    fetch("http://localhost:5001/api/model")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.active_model === "svm" || data.active_model === "lstm") {
+          setModelType(data.active_model);
+        }
+      })
+      .catch((err) => console.error("Failed to get model:", err));
+  }, []);
 
   useEffect(() => {
     if (!isStreaming) return;
@@ -126,12 +138,12 @@ const App = () => {
         debounceTimer = setTimeout(() => {
           setPredictions((oldPreds) => {
             if (isEqual(oldPreds, latestPreds)) {
-              return oldPreds; // no update if data same
+              return oldPreds;
             }
             return latestPreds;
           });
           debounceTimer = null;
-        }, 400); // debounce delay (400ms)
+        }, 400);
       },
       (error) => {
         console.error("Firestore onSnapshot error:", error);
@@ -150,6 +162,27 @@ const App = () => {
 
   const toggleStreaming = () => setIsStreaming((prev) => !prev);
 
+  const handleModelSwitch = async (useSVM: boolean) => {
+    const selectedModel = useSVM ? "svm" : "lstm";
+    setModelType(selectedModel);
+
+    try {
+      const response = await fetch("http://localhost:5001/api/model", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ model_type: selectedModel }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to switch model");
+      }
+    } catch (error) {
+      console.error("Error switching model:", error);
+    }
+  };
+
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
@@ -164,8 +197,8 @@ const App = () => {
                   <div className="min-h-screen bg-background text-foreground p-4 space-y-4">
                     <Header />
 
-                    {/* Simulator toggle and theme toggle */}
-                    <div className="flex justify-between items-center mb-4 px-4">
+                    {/* Simulator toggle, model toggle, and theme toggle */}
+                    <div className="flex flex-wrap justify-between items-center mb-4 gap-4 px-4">
                       <label className="inline-flex items-center space-x-3 cursor-pointer">
                         <Switch
                           checked={isSimulated}
@@ -175,7 +208,24 @@ const App = () => {
                           aria-label="Toggle between live and simulated data"
                         />
                         <span className="text-sm font-medium">
-                          {isSimulated ? "Simulator Mode" : "Live Sensor Mode"}
+                          {isSimulated
+                            ? "Simulator Mode"
+                            : "Live Sensor Mode"}
+                        </span>
+                      </label>
+
+                      <label className="inline-flex items-center space-x-3 cursor-pointer">
+                        <Switch
+                          checked={modelType === "svm"}
+                          onCheckedChange={(checked) =>
+                            handleModelSwitch(checked as boolean)
+                          }
+                          aria-label="Toggle between LSTM and SVM model"
+                        />
+                        <span className="text-sm font-medium">
+                          {modelType === "svm"
+                            ? "SVM Model"
+                            : "LSTM Model"}
                         </span>
                       </label>
 
@@ -212,11 +262,15 @@ const App = () => {
 
                       <div className="flex flex-col space-y-4 w-full">
                         <ActivityPrediction
-                          activity={toActivity(latestPrediction?.activity) ?? null}
+                          activity={
+                            toActivity(latestPrediction?.activity) ?? null
+                          }
                           accuracy={(latestPrediction?.accuracy ?? 0) * 100}
                           actualActivity={
                             isSimulated
-                              ? toActivity(latestPrediction?.actual_activity) ?? null
+                              ? toActivity(
+                                  latestPrediction?.actual_activity
+                                ) ?? null
                               : undefined
                           }
                           isSimulated={isSimulated}

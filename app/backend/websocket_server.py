@@ -7,7 +7,7 @@ from statistics import mean
 from collections import deque
 
 WINDOW_SIZE = 50
-PREDICTION_INTERVAL = 0.2  # Adjust prediction frequency (5 times per second)
+PREDICTION_INTERVAL = 0.2
 BUFFER = deque(maxlen=200)
 
 SENSOR_SOURCE = "unknown"
