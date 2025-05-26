@@ -15,6 +15,12 @@ WebSocketsClient webSocket;
 unsigned long previousMillis = 0;
 const long interval = 20;  // 20 milliseconds = 50Hz
 
+const float V_REF = 3.3;
+const float SENSITIVITY = 0.33;  // V/g
+const float X_OFFSET = 1.65;
+const float Y_OFFSET = 1.65;
+const float Z_OFFSET = 1.65;  // or 1.98 if you want z = 0g when flat
+
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t length) {
   switch(type) {
     case WStype_CONNECTED:
@@ -53,11 +59,20 @@ void loop() {
   if (currentMillis - previousMillis >= interval) {
     previousMillis = currentMillis;
 
-    int xVal = analogRead(xPin);
-    int yVal = analogRead(yPin);
-    int zVal = analogRead(zPin);
+    int xRaw = analogRead(xPin);
+    int yRaw = analogRead(yPin);
+    int zRaw = analogRead(zPin);
 
-    String data = "{\"x\":" + String(xVal) + ",\"y\":" + String(yVal) + ",\"z\":" + String(zVal) + ",\"source\":\"live\"}";
+    float xVolt = (xRaw / 4095.0) * V_REF;
+    float yVolt = (yRaw / 4095.0) * V_REF;
+    float zVolt = (zRaw / 4095.0) * V_REF;
+
+    float xG = (xVolt - X_OFFSET) / SENSITIVITY;
+    float yG = (yVolt - Y_OFFSET) / SENSITIVITY;
+    float zG = (zVolt - Z_OFFSET) / SENSITIVITY;
+
+    // PRESERVED LINE EXACTLY AS REQUESTED:
+    String data = "{\"x\":" + String(xG) + ",\"y\":" + String(yG) + ",\"z\":" + String(zG) + ",\"source\":\"live\"}";
 
     Serial.println("📤 Sending: " + data);
     webSocket.sendTXT(data);
