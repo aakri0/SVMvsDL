@@ -1,11 +1,6 @@
-import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import firestore
 
-# Initialize Firebase Admin SDK
-cred = credentials.Certificate("/Users/REDACTED/SVMvsDL/app/backend/credentials/*.json")  # <-- replace with your path
-firebase_admin.initialize_app(cred)
-
-db = firestore.client()
+from app.backend.firebase_client import db
 
 def remove_client_time_field():
     predictions_ref = db.collection('predictions')

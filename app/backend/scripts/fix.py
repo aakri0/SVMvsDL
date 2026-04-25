@@ -1,10 +1,6 @@
-import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import firestore
 
-# Initialize Firebase
-cred = credentials.Certificate("/Users/REDACTED/SVMvsDL/app/backend/credentials/*.json")  # Replace with your path
-firebase_admin.initialize_app(cred)
-db = firestore.client()
+from app.backend.firebase_client import db
 
 # Fetch all documents from predictions
 collection_ref = db.collection("predictions")

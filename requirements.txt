@@ -1,10 +1,10 @@
+# Dependencies for the training notebooks (SVMvsDL.ipynb, SaveDatasetCSV.ipynb).
+# For the runtime backend, see app/backend/requirements.txt.
+jupyter
+matplotlib
 numpy
 pandas
-matplotlib
-tensorflow
-seaborn
-jupyter
-scipy
 scikit-learn
-time
-memory-manager
+scipy
+seaborn
+tensorflow

@@ -1,8 +1,13 @@
-import firebase_admin
-from firebase_admin import credentials, firestore
+import os
+
+from app.backend.firebase_client import db
+
+WISDM_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "simulator", "WISDM_raw.txt"
+)
 
 # Load WISDM_raw.txt
-with open("/Users/REDACTED/SVMvsDL/app/backend/simulator/WISDM_raw.txt") as f:
+with open(WISDM_PATH) as f:
     wisdm_lines = [line.strip().strip(';') for line in f if line.strip()]
 
 wisdm_data = []
@@ -20,11 +25,6 @@ for line in wisdm_lines:
         })
     except Exception as e:
         print(f"⚠️ Skipping line: {line} due to {e}")
-
-# Initialize Firebase
-cred = credentials.Certificate("/Users/REDACTED/SVMvsDL/app/backend/credentials/*.json")  # Update path
-firebase_admin.initialize_app(cred)
-db = firestore.client()
 
 # Fetch all simulated source documents (regardless of current field state)
 docs = db.collection("predictions").where("source", "==", "simulated").stream()

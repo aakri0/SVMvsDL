@@ -1,14 +1,11 @@
-import firebase_admin
-from firebase_admin import credentials, firestore
 import os
 
-# Initialize Firebase Admin SDK
-cred = credentials.Certificate("/Users/REDACTED/SVMvsDL/app/backend/credentials/*.json")  # Replace with actual path
-firebase_admin.initialize_app(cred)
-db = firestore.client()
+from app.backend.firebase_client import db
 
 # Read and parse the WISDM_raw.txt file
-file_path = "/Users/REDACTED/SVMvsDL/app/backend/simulator/WISDM_raw.txt"
+file_path = os.path.join(
+    os.path.dirname(__file__), "..", "simulator", "WISDM_raw.txt"
+)
 parsed_lines = []
 
 with open(file_path, "r") as file:
