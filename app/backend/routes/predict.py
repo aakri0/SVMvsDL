@@ -1,11 +1,11 @@
 # app/backend/routes/predict.py
 
 from flask import Blueprint, request, jsonify
-from app.backend.model.model import ActivityModel
-from app.backend.firebase_client import db  # Import Firestore client here
-from ..switch_model import get_model, set_model
 from google.cloud import firestore_v1 as firestore
-import numpy as np  # Added for safe conversion of numpy types
+import numpy as np
+
+from app.backend.model.model import ActivityModel
+from ..switch_model import get_model, set_model
 
 predict_route = Blueprint('predict_route', __name__)
 
@@ -69,7 +69,8 @@ def predict():
             prediction_doc['actual_activity'] = str(actual_activity)
 
         try:
-            db.collection('predictions').add(prediction_doc)
+            from app.backend.firebase_client import get_db
+            get_db().collection('predictions').add(prediction_doc)
         except Exception as e:
             print(f"[ERROR] Firestore write failed: {e}")
 

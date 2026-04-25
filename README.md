@@ -1,5 +1,10 @@
 # SVM vs Deep Learning — Real-Time Human Activity Recognition
 
+[![CI](https://github.com/aakri0/SVMvsDL/actions/workflows/ci.yml/badge.svg)](https://github.com/aakri0/SVMvsDL/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
+[![Node 18+](https://img.shields.io/badge/node-18+-green.svg)](https://nodejs.org/)
+
 A full-stack human activity recognition (HAR) system that benchmarks classical machine learning (SVM) against deep learning (LSTM) on tri-axial accelerometer data, with a live inference pipeline driven by an ESP32 wearable.
 
 The project covers the complete ML lifecycle: dataset preparation, model training and comparison in Jupyter, a Flask inference API, a real-time WebSocket ingestion server, a React/TypeScript dashboard, and embedded firmware for an ESP32-based wearable.
@@ -162,7 +167,17 @@ The backend is split into two cooperating processes:
 
 > Run all commands from the **repo root** so the `app.backend...` package paths resolve.
 
-Before starting, drop your Firebase service-account key into `app/backend/credentials/` (the directory is gitignored) and update `app/backend/firebase_client.py` to point at the file. See [Configuration & Secrets](#configuration--secrets).
+Before starting, copy `app/backend/.env.example` to `app/backend/.env` and drop your Firebase service-account key into `app/backend/credentials/` (the directory is gitignored). See [Configuration & Secrets](#configuration--secrets).
+
+For production, use `gunicorn` instead of the Flask dev server:
+
+```bash
+gunicorn -w 2 -b 0.0.0.0:5001 app.backend.app:app
+# or via the helper:
+./scripts/dev.sh start api-prod
+```
+
+`scripts/dev.sh` also exposes `GUNICORN_WORKERS` and `GUNICORN_BIND` env vars for tuning.
 
 ### 4. Frontend (React + Vite)
 
@@ -185,9 +200,9 @@ npm run lint               # eslint
 
 1. Open `app/sketch_may16a/sketch_may16a.ino` in the Arduino IDE.
 2. Install the ESP32 board package (Boards Manager → "esp32") and the **WebSockets** library by Markus Sattler.
-3. Update the `ssid`, `password`, and `host` constants at the top of the sketch:
+3. Update the `ssid`, `password`, and `host` placeholders at the top of the sketch:
    - `host` is the IP of the machine running `websocket_server.py`.
-   - `port` defaults to `5000` in the firmware — change it to `5002` to match `websocket_server.py`, or update the server to listen on `5000`.
+   - `port` is set to `5002` to match `websocket_server.py`. Keep these aligned if you change either.
 4. Wire a 3-axis analog accelerometer (e.g. ADXL335) to GPIOs 34 (X), 35 (Y), 32 (Z).
 5. Flash the board. Watch the serial monitor at 115200 baud for connection status.
 
@@ -270,15 +285,19 @@ Trained artifacts are committed under `app/backend/model/` so the API works out 
 
 ## Configuration & Secrets
 
-This repo never contains real credentials. You will need to provide your own.
+This repo never contains real credentials. You will need to provide your own. See [SECURITY.md](SECURITY.md) for the full disclosure policy and history-rotation guidance.
 
-**Backend — Firestore admin:**
+**Backend — Firestore admin & runtime config:**
 
-1. In the Firebase console, generate a service account JSON key.
+1. In the Firebase console, generate a service-account JSON key.
 2. Either:
    - Save it to `app/backend/credentials/<anything>.json` — `firebase_client.py` auto-discovers any `*.json` in that folder (it is gitignored), or
    - Set `FIREBASE_CREDENTIALS=/absolute/path/to/key.json` in your environment.
-3. Do **not** commit absolute paths or service-account keys.
+3. Copy `app/backend/.env.example` to `app/backend/.env` and set:
+   - `CORS_ORIGINS` — comma-separated allowlist of dashboard origins (e.g. `https://your-dashboard.example.com`). Defaults to `localhost:8080` for development.
+   - `FLASK_DEBUG=0` (default). **Never** set this to `1` in production — Flask debug mode allows arbitrary code execution via the Werkzeug debugger.
+   - `ENABLE_FIRESTORE_TEST` — leave unset; the `/test-firestore` endpoint is disabled by default.
+4. Do **not** commit absolute paths, service-account keys, or `.env` files.
 
 **Frontend — Firestore web SDK:**
 

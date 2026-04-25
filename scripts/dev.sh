@@ -3,7 +3,8 @@
 # scripts/dev.sh — start / stop / inspect the SVMvsDL stack locally.
 #
 # Services managed:
-#   api        Flask inference API           http://localhost:5001
+#   api        Flask dev server              http://localhost:5001
+#   api-prod   Flask via gunicorn (prod)     http://localhost:5001
 #   ws         WebSocket ingestion server    ws://localhost:5002
 #   frontend   Vite dev server               http://localhost:8080
 #   simulator  WISDM replay (optional)       (no port, connects to ws)
@@ -25,7 +26,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RUN_DIR="$REPO_ROOT/.run"
 DEFAULT_SERVICES=(api ws frontend)
-ALL_SERVICES=(api ws simulator frontend)
+ALL_SERVICES=(api api-prod ws simulator frontend)
 
 mkdir -p "$RUN_DIR"
 
@@ -51,6 +52,7 @@ is_running() {
 cmd_for() {
   case "$1" in
     api)       echo "python -m app.backend.app" ;;
+    api-prod)  echo "gunicorn -w ${GUNICORN_WORKERS:-2} -b ${GUNICORN_BIND:-127.0.0.1:5001} app.backend.app:app" ;;
     ws)        echo "python -m app.backend.websocket_server" ;;
     simulator) echo "python -m app.backend.simulator" ;;
     frontend)  echo "npm --prefix app/frontend run dev" ;;

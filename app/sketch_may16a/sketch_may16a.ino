@@ -1,10 +1,11 @@
 #include <WiFi.h>
 #include <WebSocketsClient.h>
 
-const char* ssid = "F54";                     // Replace with your WiFi
-const char* password = "REDACTED_PASSWORD";       // Replace with your password
-const char* host = "REDACTED_IP";         // WSL IP
-const uint16_t port = 5000;                   // Python server port
+// --- Configure these for your network before flashing ---
+const char* ssid = "YOUR_WIFI_SSID";          // your 2.4GHz WiFi SSID
+const char* password = "YOUR_WIFI_PASSWORD";  // your WiFi password
+const char* host = "YOUR_SERVER_IP";          // IP of the machine running websocket_server.py
+const uint16_t port = 5002;                   // must match websocket_server.py
 
 const int xPin = 34;
 const int yPin = 35;

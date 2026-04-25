@@ -1,4 +1,8 @@
 # app/backend/firebase_client.py
+#
+# Lazy Firestore client. The module-level `db` symbol is only initialized on
+# first access — this lets tests / CI import the rest of the backend without
+# needing a real service-account JSON.
 
 import glob
 import os
@@ -7,6 +11,8 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 
 CREDENTIALS_DIR = os.path.join(os.path.dirname(__file__), "credentials")
+
+_db = None
 
 
 def _resolve_credentials_path() -> str:
@@ -33,9 +39,20 @@ def _resolve_credentials_path() -> str:
     return matches[0]
 
 
-if not firebase_admin._apps:
-    cred = credentials.Certificate(_resolve_credentials_path())
-    firebase_admin.initialize_app(cred)
-    print("✅ Firebase initialized.")
+def get_db():
+    """Initialize Firebase on first call and return the Firestore client."""
+    global _db
+    if _db is None:
+        if not firebase_admin._apps:
+            cred = credentials.Certificate(_resolve_credentials_path())
+            firebase_admin.initialize_app(cred)
+        _db = firestore.client()
+    return _db
 
-db = firestore.client()
+
+def __getattr__(name):
+    # Preserves the legacy `from app.backend.firebase_client import db` API
+    # while keeping initialization lazy.
+    if name == "db":
+        return get_db()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
