@@ -5,6 +5,7 @@ flask_cors==6.0.0
 gunicorn==23.0.0
 joblib==1.4.0
 python_dateutil==2.8.2
+scikit-learn>=1.4,<1.7
 tensorflow==2.19.0
 tqdm==4.66.2
 websockets==15.0.1
