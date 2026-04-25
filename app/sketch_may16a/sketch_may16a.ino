@@ -1,10 +1,11 @@
 #include <WiFi.h>
 #include <WebSocketsClient.h>
 
-const char* ssid = "F54";                     // Replace with your WiFi
-const char* password = "Aayush Pandey";       // Replace with your password
-const char* host = "192.168.45.105";         // WSL IP
-const uint16_t port = 5002;                   // Python server port
+// --- Configure these for your network before flashing ---
+const char* ssid = "YOUR_WIFI_SSID";          // your 2.4GHz WiFi SSID
+const char* password = "YOUR_WIFI_PASSWORD";  // your WiFi password
+const char* host = "YOUR_SERVER_IP";          // IP of the machine running websocket_server.py
+const uint16_t port = 5002;                   // must match websocket_server.py
 
 const int xPin = 34;
 const int yPin = 35;
@@ -71,12 +72,8 @@ void loop() {
     float yG = (yVolt - Y_OFFSET) / SENSITIVITY;
     float zG = (zVolt - Z_OFFSET) / SENSITIVITY;
 
-    float x_ms2 = xG*9.8;
-    float y_ms2 = yG*9.8;
-    float z_ms2 = zG*9.8;
-
     // PRESERVED LINE EXACTLY AS REQUESTED:
-    String data = "{\"x\":" + String(x_ms2) + ",\"y\":" + String(y_ms2) + ",\"z\":" + String(z_ms2) + ",\"source\":\"live\"}";
+    String data = "{\"x\":" + String(xG) + ",\"y\":" + String(yG) + ",\"z\":" + String(zG) + ",\"source\":\"live\"}";
 
     Serial.println("📤 Sending: " + data);
     webSocket.sendTXT(data);

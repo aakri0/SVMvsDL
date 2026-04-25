@@ -18,7 +18,7 @@ class ActivityModel:
             self.model = joblib.load(full_model_path)
             if scaler_path is None:
                 raise ValueError("Scaler path must be provided for SVM model.")
-            full_scaler_path = os.path.join(base_dir, "SVM_scaler_50.pkl")
+            full_scaler_path = os.path.join(base_dir, "scaler_50.pkl")
             self.scaler = joblib.load(full_scaler_path)
 
     def predict_with_accuracy(self, window_dict):
