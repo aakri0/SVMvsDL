@@ -1,9 +1,13 @@
-import firebase_admin
-import glob
-from firebase_admin import credentials, firestore
+import os
+
+from app.backend.firebase_client import db
+
+WISDM_PATH = os.path.join(
+    os.path.dirname(__file__), "..", "simulator", "WISDM_raw.txt"
+)
 
 # Load WISDM_raw.txt
-with open("../simulator/WISDM_raw.txt") as f:
+with open(WISDM_PATH) as f:
     wisdm_lines = [line.strip().strip(';') for line in f if line.strip()]
 
 wisdm_data = []
@@ -21,17 +25,6 @@ for line in wisdm_lines:
         })
     except Exception as e:
         print(f"⚠️ Skipping line: {line} due to {e}")
-
-# Find the first .json file in credentials directory
-json_files = glob.glob("../credentials/*.json")
-if not json_files:
-    raise FileNotFoundError("No JSON file found in ../credentials/")
-cred_path = json_files[0]  # Use the first matching file
-
-# Initialize Firebase
-cred = credentials.Certificate(cred_path)  # Update path
-firebase_admin.initialize_app(cred)
-db = firestore.client()
 
 # Fetch all simulated source documents (regardless of current field state)
 docs = db.collection("predictions").where("source", "==", "simulated").stream()

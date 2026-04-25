@@ -1,17 +1,6 @@
-import firebase_admin
-import glob
-from firebase_admin import credentials, firestore
+from firebase_admin import firestore
 
-# Find the first .json file in credentials directory
-json_files = glob.glob("../credentials/cred.json")
-if not json_files:
-    raise FileNotFoundError("No JSON file found in ../credentials/")
-cred_path = json_files[0]  # Use the first matching file
-
-# Initialize Firebase
-cred = credentials.Certificate(cred_path)  # Replace with your path
-firebase_admin.initialize_app(cred)
-db = firestore.client()
+from app.backend.firebase_client import db
 
 # Fetch all documents from predictions
 collection_ref = db.collection("predictions")

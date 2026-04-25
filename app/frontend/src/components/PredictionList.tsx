@@ -1,4 +1,5 @@
 import React from "react";
+import type { Timestamp } from "firebase/firestore";
 
 export interface Prediction {
   id: string;
@@ -6,7 +7,7 @@ export interface Prediction {
   activity: string;
   accuracy: number;
   actual_activity?: string;
-  timestamp: any; // Firestore Timestamp or Date
+  timestamp: Timestamp | Date;
   time: Date;
 
   accelX?: number;
