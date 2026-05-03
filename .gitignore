@@ -76,7 +76,7 @@ logs/
 checkpoints/
 *.tfevents.*
 
-# --- Local dev runtime state (PIDs and logs from scripts/dev.sh) ---
+# --- Local dev runtime state ---
 .run/
 
 # --- IDE / editor ---
