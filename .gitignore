@@ -86,6 +86,9 @@ checkpoints/
 *.swo
 *~
 
+# --- Claude Code per-machine settings ---
+.claude/
+
 # --- OS ---
 .DS_Store
 Thumbs.db
